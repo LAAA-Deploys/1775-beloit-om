@@ -78,19 +78,29 @@ CONSTRUCTION = "Type II Steel-Frame"
 STORIES = "7 stories above grade + 1 subterranean"
 
 # Finance
-ACQ_PRICE = 8625000
+ACQ_PRICE = 7900000
 DEV_COST = 22000000
 SELLER_NOTE = 16000000
 ACQ_LOAN = 5606250
 ACQ_RATE = 6.25
 PERM_LOAN = 7407396
 PERM_RATE = 5.25
-TOTAL_BUDGET_ACQ = 9431662
-TOTAL_BUDGET_PERM = 9496662
-PEAK_EQUITY_ACQ = 3980412
-PEAK_EQUITY_PERM = 2089266
+# Sources & Uses line items
+ACQ_FEE_PCT = 0.0125
+ACQ_FEE = round(ACQ_PRICE * ACQ_FEE_PCT)
+WORKING_CAPITAL = 140725
+MISC_IMPROVEMENTS = 50000
+ADU_COSTS = 396000
+ACQ_FINANCING_FEES = 112125
+PERM_FINANCING_FEES = 65000
+CUMULATIVE_ACQ = ACQ_FEE + WORKING_CAPITAL + MISC_IMPROVEMENTS + ADU_COSTS + ACQ_FINANCING_FEES
+CUMULATIVE_PERM = CUMULATIVE_ACQ + PERM_FINANCING_FEES
+TOTAL_BUDGET_ACQ = ACQ_PRICE + CUMULATIVE_ACQ
+TOTAL_BUDGET_PERM = ACQ_PRICE + CUMULATIVE_PERM
+PEAK_EQUITY_ACQ = TOTAL_BUDGET_ACQ - ACQ_LOAN
+PEAK_EQUITY_PERM = TOTAL_BUDGET_PERM - PERM_LOAN
 
-# Pro Forma
+# Pro Forma (operating side unchanged by purchase-price change)
 GPR = 1157355
 VACANCY_PCT = 6.20
 VACANCY_AMT = 71756
@@ -98,20 +108,26 @@ TOTAL_OPEX = 471559
 OPEX_PCT = 38.37
 OPEX_PER_BED_MO = 785.93
 NOI = 626357
-CAP_ON_COST_UNTRENDED = 6.64
-CAP_ON_COST_TRENDED = 7.22
+# Year-3 NOI under 3% rent / 2% expense growth (used for trended YoC)
+NOI_Y3 = round((GPR * (1.03**3) - VACANCY_AMT * (1.03**3)) - (TOTAL_OPEX * (1.02**3)))
+CAP_ON_COST_UNTRENDED = round(NOI / TOTAL_BUDGET_ACQ * 100, 2)
+CAP_ON_COST_TRENDED = round(NOI_Y3 / TOTAL_BUDGET_ACQ * 100, 2)
 
-# CoC
-COC_ACQ_IO = 6.93
-COC_PERM_IO = 11.37
-COC_ACQ_PI = 5.33
-COC_PERM_PI = 6.49
-CFDS_ACQ_IO = 275966
-CFDS_PERM_IO = 237469
+# CoC (cash flow unchanged; equity changes)
 DS_ACQ_IO = 350391
 DS_PERM_IO = 388888
-DSCR_PERM_PI = 1.28
-DSCR_ACQ_PI = 1.51
+CFDS_ACQ_IO = NOI - DS_ACQ_IO        # 275,966
+CFDS_PERM_IO = NOI - DS_PERM_IO      # 237,469
+DS_ACQ_PI = 414224
+DS_PERM_PI = 490847
+CFDS_ACQ_PI = NOI - DS_ACQ_PI        # 212,133
+CFDS_PERM_PI = NOI - DS_PERM_PI      # 135,510
+COC_ACQ_IO = round(CFDS_ACQ_IO / PEAK_EQUITY_ACQ * 100, 2)
+COC_PERM_IO = round(CFDS_PERM_IO / PEAK_EQUITY_PERM * 100, 2)
+COC_ACQ_PI = round(CFDS_ACQ_PI / PEAK_EQUITY_ACQ * 100, 2)
+COC_PERM_PI = round(CFDS_PERM_PI / PEAK_EQUITY_PERM * 100, 2)
+DSCR_PERM_PI = round(NOI / DS_PERM_PI, 2)
+DSCR_ACQ_PI = round(NOI / DS_ACQ_PI, 2)
 
 # Alternate basis scenario
 ALT_PRICE = 7900000  # Effective basis / negotiated tax assessment / lower-basis scenario
@@ -198,7 +214,7 @@ EXPENSE_ITEMS = [
     ("Professional Fees", "$42.67 / unit / mo", 25600),
     ("Repairs & Maintenance", "$1,761.90 / mo", 21143),
     ("Utilities + Internet", "$130.76 / unit / mo", 78457),
-    ("Property Taxes", "1.11% on $7.9M assessed (per seller deal)", 95325),
+    ("Property Taxes", "1.11% of assessed value", 95325),
     ("Management Fee", "2.50% of revenue (self-manage)", 27417),
 ]
 
@@ -811,45 +827,6 @@ FINANCIALS = f"""
     <div class="metric-card"><span class="metric-value">{pct(COC_PERM_IO)}</span><span class="metric-label">Stab. CoC (Perm IO)</span></div>
   </div>
 
-  <h3 class="sub-heading">Acquisition Basis Sensitivity</h3>
-  <p>The headline acquisition price of {money(ACQ_PRICE, 2)} reflects the negotiated purchase contract. The County of Los Angeles tax assessor base, however, is being set at {money(ALT_PRICE, 2)} per a separate stipulation negotiated with the seller (a meaningful annual property-tax savings reflected in the pro forma). The matrix below shows key acquisition metrics at both basis points.</p>
-  <div class="sens-grid">
-    <div class="sens-col headline">
-      <div class="sens-label">Headline Purchase Basis</div>
-      <div class="sens-price">{money(ACQ_PRICE, 2)}</div>
-      <div class="sens-sub">Contract purchase price</div>
-      <div class="sens-rows">
-        <div class="sens-row"><span class="k">$ / Bed (48 existing)</span><span class="v">{usd(BASE["ppb_existing"])}</span></div>
-        <div class="sens-row"><span class="k">$ / Bed (50 with ADU)</span><span class="v">{usd(BASE["ppb_w_adu"])}</span></div>
-        <div class="sens-row"><span class="k">$ / Unit (16 existing)</span><span class="v">{usd(BASE["ppu_existing"])}</span></div>
-        <div class="sens-row"><span class="k">$ / SF Rentable</span><span class="v">${BASE["psf_rent"]:.0f}</span></div>
-        <div class="sens-row"><span class="k">$ / SF Gross</span><span class="v">${BASE["psf_gross"]:.0f}</span></div>
-        <div class="sens-row"><span class="k">Discount to Replacement Cost</span><span class="v">{pct(BASE["disc_repl"]*100, 0)}</span></div>
-        <div class="sens-row"><span class="k">Discount to UCLA $250K / Bed</span><span class="v">{pct(UCLA_DISCOUNT*100, 0)}</span></div>
-        <div class="sens-row"><span class="k">Cap Rate on Price</span><span class="v">{pct(BASE["cap_on_price"]*100)}</span></div>
-        <div class="sens-row"><span class="k">Untrended YoC (Acq Loan)</span><span class="v">{pct(BASE["yoc_acq"]*100)}</span></div>
-        <div class="sens-row"><span class="k">Untrended YoC (Perm Loan)</span><span class="v">{pct(BASE["yoc_perm"]*100)}</span></div>
-      </div>
-    </div>
-    <div class="sens-col alt">
-      <div class="sens-label">Effective Tax Basis</div>
-      <div class="sens-price">{money(ALT_PRICE, 2)}</div>
-      <div class="sens-sub">Property tax basis per seller stipulation</div>
-      <div class="sens-rows">
-        <div class="sens-row"><span class="k">$ / Bed (48 existing)</span><span class="v">{usd(ALT["ppb_existing"])}</span></div>
-        <div class="sens-row"><span class="k">$ / Bed (50 with ADU)</span><span class="v">{usd(ALT["ppb_w_adu"])}</span></div>
-        <div class="sens-row"><span class="k">$ / Unit (16 existing)</span><span class="v">{usd(ALT["ppu_existing"])}</span></div>
-        <div class="sens-row"><span class="k">$ / SF Rentable</span><span class="v">${ALT["psf_rent"]:.0f}</span></div>
-        <div class="sens-row"><span class="k">$ / SF Gross</span><span class="v">${ALT["psf_gross"]:.0f}</span></div>
-        <div class="sens-row"><span class="k">Discount to Replacement Cost</span><span class="v">{pct(ALT["disc_repl"]*100, 0)}</span></div>
-        <div class="sens-row"><span class="k">Discount to UCLA $250K / Bed</span><span class="v">{pct(UCLA_DISCOUNT_ALT*100, 0)}</span></div>
-        <div class="sens-row"><span class="k">Cap Rate on Price</span><span class="v">{pct(ALT["cap_on_price"]*100)}</span></div>
-        <div class="sens-row"><span class="k">Untrended YoC (Acq Loan)</span><span class="v">{pct(ALT["yoc_acq"]*100)}</span></div>
-        <div class="sens-row"><span class="k">Untrended YoC (Perm Loan)</span><span class="v">{pct(ALT["yoc_perm"]*100)}</span></div>
-      </div>
-    </div>
-  </div>
-
   <h3 class="sub-heading">Sources &amp; Uses</h3>
   <div class="ts">
   <table>
@@ -858,11 +835,11 @@ FINANCIALS = f"""
     </thead>
     <tbody>
       <tr><td>Purchase Price</td><td class="num">{usd(ACQ_PRICE)}</td><td class="num">{usd(ACQ_PRICE)}</td></tr>
-      <tr><td>Acquisition Fee (1.25%)</td><td class="num">$107,813</td><td class="num">&mdash;</td></tr>
-      <tr><td>Working Capital (Closing, Lease-Up)</td><td class="num">$140,725</td><td class="num">&mdash;</td></tr>
-      <tr><td>FFE &amp; Misc Improvements</td><td class="num">$50,000</td><td class="num">&mdash;</td></tr>
-      <tr><td>ADU Hard &amp; Soft Costs</td><td class="num">$396,000</td><td class="num">&mdash;</td></tr>
-      <tr><td>Financing &amp; Closing Fees</td><td class="num">$112,125</td><td class="num">$65,000</td></tr>
+      <tr><td>Acquisition Fee (1.25%)</td><td class="num">{usd(ACQ_FEE)}</td><td class="num">&mdash;</td></tr>
+      <tr><td>Working Capital (Closing, Lease-Up)</td><td class="num">{usd(WORKING_CAPITAL)}</td><td class="num">&mdash;</td></tr>
+      <tr><td>FFE &amp; Misc Improvements</td><td class="num">{usd(MISC_IMPROVEMENTS)}</td><td class="num">&mdash;</td></tr>
+      <tr><td>ADU Hard &amp; Soft Costs</td><td class="num">{usd(ADU_COSTS)}</td><td class="num">&mdash;</td></tr>
+      <tr><td>Financing &amp; Closing Fees</td><td class="num">{usd(ACQ_FINANCING_FEES)}</td><td class="num">{usd(PERM_FINANCING_FEES)}</td></tr>
       <tr class="subtotal"><td><strong>Total Project Budget</strong></td><td class="num"><strong>{usd(TOTAL_BUDGET_ACQ)}</strong></td><td class="num"><strong>{usd(TOTAL_BUDGET_PERM)}</strong></td></tr>
       <tr><td>Loan Amount</td><td class="num">{usd(ACQ_LOAN)}</td><td class="num">{usd(PERM_LOAN)}</td></tr>
       <tr><td>Rate (Interest-Only)</td><td class="num">{pct(ACQ_RATE)}</td><td class="num">{pct(PERM_RATE)}</td></tr>
@@ -904,7 +881,7 @@ FINANCIALS = f"""
   </div>
 
   <div class="cn">
-    <strong>Pro Forma Basis:</strong> Stabilized year-1 figures reflect the asset operating at occupancy on the 18-unit / 50-bed footprint following the two-ADU buildout. The rent assumption of $1,570 / bed sits approximately $100 below the in-place average of $1,648 per bed. Property taxes are modeled at 1.11% of an assessed value of $7.9M, reflecting a negotiated re-assessment basis with the seller. The 2.50% management fee reflects Category's in-house property management economics; a third-party benchmark for a comparable LA co-living asset would underwrite ~4.0% of GSR.
+    <strong>Pro Forma Basis:</strong> Stabilized year-1 figures reflect the asset operating at occupancy on the 18-unit / 50-bed footprint following the two-ADU buildout. The rent assumption of $1,570 / bed sits approximately $100 below the in-place average of $1,648 per bed. The 2.50% management fee reflects Category's in-house property management economics; a third-party benchmark for a comparable LA co-living asset would underwrite ~4.0% of GSR.
   </div>
 </section>
 """
