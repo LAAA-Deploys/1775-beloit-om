@@ -44,8 +44,15 @@ LOGO_WHITE  = img_b64("LAAA_Team_White.png", 600)
 LOGO_BLUE   = img_b64("LAAA_Team_Blue.png", 600)
 GLEN_IMG    = img_b64("Glen_Scher.png", 300)
 FILIP_IMG   = img_b64("Filip_Niculete.png", 300)
-# Optional hero - user can drop in hero.jpg
-HERO_IMG    = img_b64("hero.jpg", 1600) if os.path.exists(os.path.join(IMAGES_DIR, "hero.jpg")) else ""
+# Hero + gallery
+HERO_IMG       = img_b64("hero.jpg", 1600) if os.path.exists(os.path.join(IMAGES_DIR, "hero.jpg")) else ""
+EXTERIOR_IMG   = img_b64("exterior1.jpg", 1400) if os.path.exists(os.path.join(IMAGES_DIR, "exterior1.jpg")) else ""
+RENDERING_IMG  = img_b64("rendering.jpg", 1400) if os.path.exists(os.path.join(IMAGES_DIR, "rendering.jpg")) else ""
+ROOFTOP_IMG    = img_b64("rooftop_view.jpg", 1400) if os.path.exists(os.path.join(IMAGES_DIR, "rooftop_view.jpg")) else ""
+PATIO_IMG      = img_b64("rooftop_patio.jpg", 1400) if os.path.exists(os.path.join(IMAGES_DIR, "rooftop_patio.jpg")) else ""
+STUDIO_IMG     = img_b64("interior_studio.jpg", 1400) if os.path.exists(os.path.join(IMAGES_DIR, "interior_studio.jpg")) else ""
+KITCHEN_IMG    = img_b64("interior_kitchen.jpg", 1400) if os.path.exists(os.path.join(IMAGES_DIR, "interior_kitchen.jpg")) else ""
+COLIVING_IMG   = img_b64("interior_coliving.jpg", 1400) if os.path.exists(os.path.join(IMAGES_DIR, "interior_coliving.jpg")) else ""
 
 # ============================================================
 # DEAL DATA
@@ -105,18 +112,39 @@ DS_PERM_IO = 388888
 DSCR_PERM_PI = 1.28
 DSCR_ACQ_PI = 1.51
 
-# Derived
-PPU_EXISTING = ACQ_PRICE / UNITS_EXISTING
-PPU_W_ADU = ACQ_PRICE / UNITS_W_ADU
-PPB_EXISTING = ACQ_PRICE / BEDS_EXISTING
-PPB_W_ADU = ACQ_PRICE / BEDS_W_ADU
-PRICE_PSF_RENT = ACQ_PRICE / RENTABLE_SF
-PRICE_PSF_GROSS = ACQ_PRICE / GROSS_SF
-DISCOUNT_TO_REPLACEMENT = 1 - (ACQ_PRICE / DEV_COST)
+# Alternate basis scenario
+ALT_PRICE = 7900000  # Effective basis / negotiated tax assessment / lower-basis scenario
+
+def derive(price):
+    return {
+        "ppu_existing": price / UNITS_EXISTING,
+        "ppu_w_adu":    price / UNITS_W_ADU,
+        "ppb_existing": price / BEDS_EXISTING,
+        "ppb_w_adu":    price / BEDS_W_ADU,
+        "psf_rent":     price / RENTABLE_SF,
+        "psf_gross":    price / GROSS_SF,
+        "disc_repl":    1 - (price / DEV_COST),
+        "cap_on_price": NOI / price,
+        # Yield on cost = NOI / (PP + non-PP costs in acq scenario)
+        "yoc_acq":      NOI / (price + (TOTAL_BUDGET_ACQ - ACQ_PRICE)),
+        "yoc_perm":     NOI / (price + (TOTAL_BUDGET_PERM - ACQ_PRICE)),
+    }
+
+BASE = derive(ACQ_PRICE)
+ALT  = derive(ALT_PRICE)
+
+PPU_EXISTING = BASE["ppu_existing"]
+PPU_W_ADU = BASE["ppu_w_adu"]
+PPB_EXISTING = BASE["ppb_existing"]
+PPB_W_ADU = BASE["ppb_w_adu"]
+PRICE_PSF_RENT = BASE["psf_rent"]
+PRICE_PSF_GROSS = BASE["psf_gross"]
+DISCOUNT_TO_REPLACEMENT = BASE["disc_repl"]
 
 # Comp benchmark math
 UCLA_PPB = 250000
 UCLA_DISCOUNT = 1 - (PPB_EXISTING / UCLA_PPB)
+UCLA_DISCOUNT_ALT = 1 - (ALT["ppb_existing"] / UCLA_PPB)
 
 def money(n, decimals=0):
     if n >= 1_000_000:
@@ -336,6 +364,32 @@ td.num, th.num {{ text-align: right; font-variant-numeric: tabular-nums; }}
 .bench .stat-l {{ font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }}
 .bench p {{ font-size: 12px; line-height: 1.55; margin: 0; color: #555; }}
 
+/* ---- PHOTO GRID ---- */
+.photo-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 24px 0 30px; }}
+.photo-grid .pg-item {{ position: relative; overflow: hidden; border-radius: 6px; aspect-ratio: 4 / 3; background: #1B3A5C; }}
+.photo-grid .pg-item img {{ width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s ease; }}
+.photo-grid .pg-item:hover img {{ transform: scale(1.04); }}
+.photo-grid .pg-caption {{ position: absolute; bottom: 0; left: 0; right: 0; padding: 10px 14px; background: linear-gradient(to top, rgba(0,0,0,0.7), transparent); color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0.5px; }}
+.photo-grid .pg-hero {{ grid-column: span 2; grid-row: span 2; aspect-ratio: 8 / 6; }}
+
+/* ---- SENSITIVITY ---- */
+.sens-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 18px 0 28px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }}
+.sens-col {{ background: #fff; padding: 28px 26px; }}
+.sens-col.headline {{ background: #1B3A5C; color: #fff; }}
+.sens-col.alt {{ background: #fffaf0; border-left: 4px solid #C5A258; }}
+.sens-label {{ font-size: 11px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-bottom: 6px; opacity: 0.85; }}
+.sens-col.headline .sens-label {{ color: #C5A258; opacity: 1; }}
+.sens-col.alt .sens-label {{ color: #C5A258; }}
+.sens-price {{ font-size: 38px; font-weight: 700; line-height: 1; margin-bottom: 6px; }}
+.sens-col.headline .sens-price {{ color: #fff; }}
+.sens-col.alt .sens-price {{ color: #1B3A5C; }}
+.sens-sub {{ font-size: 12px; opacity: 0.7; margin-bottom: 20px; }}
+.sens-rows {{ font-size: 13px; }}
+.sens-rows .sens-row {{ display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid rgba(0,0,0,0.07); }}
+.sens-col.headline .sens-rows .sens-row {{ border-bottom-color: rgba(255,255,255,0.12); }}
+.sens-rows .sens-row .k {{ opacity: 0.75; }}
+.sens-rows .sens-row .v {{ font-weight: 600; font-variant-numeric: tabular-nums; }}
+
 /* ---- VALUE CREATION ---- */
 .vc {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 18px; }}
 .vc-card {{ background: #fff; border: 1px solid #e6e6e6; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }}
@@ -383,6 +437,10 @@ td.num, th.num {{ text-align: right; font-variant-numeric: tabular-nums; }}
   .vc {{ grid-template-columns: 1fr; }}
   .bench-grid {{ grid-template-columns: 1fr; }}
   .two-col {{ grid-template-columns: 1fr; }}
+  .photo-grid {{ grid-template-columns: repeat(2, 1fr); }}
+  .photo-grid .pg-hero {{ grid-column: span 2; }}
+  .sens-grid {{ grid-template-columns: 1fr; }}
+  .sens-price {{ font-size: 30px; }}
   .footer-team {{ flex-direction: column; align-items: center; gap: 36px; }}
   .leaflet-map {{ height: 300px; }}
   .toc-nav a {{ font-size: 10px; padding: 10px 8px; }}
@@ -589,6 +647,34 @@ ASSET += f"""
   <div class="cn">
     <strong>Operating Note:</strong> The asset is being acquired with <strong>~58% in-place occupancy</strong>, the residual state from an abandoned receiver-led strategy to fully vacate the property in advance of a direct sale to UCLA (subsequently abandoned due to tenant buy-out regulations). Re-leasing to stabilization is the central operating task in months 0-12. Category Company's portfolio velocity of 1-3 leases per week on comparable West LA co-living assets supports a ~12-week path to stabilized occupancy.
   </div>
+
+  <h3 class="sub-heading">Property Photos</h3>
+  <div class="photo-grid">
+    <div class="pg-item pg-hero">
+      <img src="{EXTERIOR_IMG}" alt="1775 Beloit Avenue exterior">
+      <div class="pg-caption">Building Exterior &middot; Beloit Avenue Frontage</div>
+    </div>
+    <div class="pg-item">
+      <img src="{RENDERING_IMG}" alt="Architectural rendering">
+      <div class="pg-caption">Architectural Concept &middot; ShubinDonaldson</div>
+    </div>
+    <div class="pg-item">
+      <img src="{HERO_IMG}" alt="Rooftop terrace">
+      <div class="pg-caption">Rooftop Deck &middot; Century City Views</div>
+    </div>
+    <div class="pg-item">
+      <img src="{COLIVING_IMG}" alt="Co-living suite">
+      <div class="pg-caption">Co-Living Junior Suite</div>
+    </div>
+    <div class="pg-item">
+      <img src="{KITCHEN_IMG}" alt="Kitchen">
+      <div class="pg-caption">Studio Kitchen &middot; Boutique Spec</div>
+    </div>
+    <div class="pg-item">
+      <img src="{PATIO_IMG}" alt="Rooftop patio">
+      <div class="pg-caption">Rooftop Lounge &middot; Amenity Deck</div>
+    </div>
+  </div>
 </section>
 """
 
@@ -722,6 +808,45 @@ FINANCIALS = f"""
     <div class="metric-card"><span class="metric-value">{pct(CAP_ON_COST_UNTRENDED)}</span><span class="metric-label">Untrended Yield on Cost</span></div>
     <div class="metric-card"><span class="metric-value">{pct(CAP_ON_COST_TRENDED)}</span><span class="metric-label">Trended YoC (3-Year)</span></div>
     <div class="metric-card"><span class="metric-value">{pct(COC_PERM_IO)}</span><span class="metric-label">Stab. CoC (Perm IO)</span></div>
+  </div>
+
+  <h3 class="sub-heading">Acquisition Basis Sensitivity</h3>
+  <p>The headline acquisition price of {money(ACQ_PRICE, 2)} reflects the negotiated purchase contract. The County of Los Angeles tax assessor base, however, is being set at {money(ALT_PRICE, 2)} per a separate stipulation negotiated with the seller (a meaningful annual property-tax savings reflected in the pro forma). The matrix below shows key acquisition metrics at both basis points.</p>
+  <div class="sens-grid">
+    <div class="sens-col headline">
+      <div class="sens-label">Headline Purchase Basis</div>
+      <div class="sens-price">{money(ACQ_PRICE, 2)}</div>
+      <div class="sens-sub">Contract purchase price</div>
+      <div class="sens-rows">
+        <div class="sens-row"><span class="k">$ / Bed (48 existing)</span><span class="v">{usd(BASE["ppb_existing"])}</span></div>
+        <div class="sens-row"><span class="k">$ / Bed (50 with ADU)</span><span class="v">{usd(BASE["ppb_w_adu"])}</span></div>
+        <div class="sens-row"><span class="k">$ / Unit (16 existing)</span><span class="v">{usd(BASE["ppu_existing"])}</span></div>
+        <div class="sens-row"><span class="k">$ / SF Rentable</span><span class="v">${BASE["psf_rent"]:.0f}</span></div>
+        <div class="sens-row"><span class="k">$ / SF Gross</span><span class="v">${BASE["psf_gross"]:.0f}</span></div>
+        <div class="sens-row"><span class="k">Discount to Replacement Cost</span><span class="v">{pct(BASE["disc_repl"]*100, 0)}</span></div>
+        <div class="sens-row"><span class="k">Discount to UCLA $250K / Bed</span><span class="v">{pct(UCLA_DISCOUNT*100, 0)}</span></div>
+        <div class="sens-row"><span class="k">Cap Rate on Price</span><span class="v">{pct(BASE["cap_on_price"]*100)}</span></div>
+        <div class="sens-row"><span class="k">Untrended YoC (Acq Loan)</span><span class="v">{pct(BASE["yoc_acq"]*100)}</span></div>
+        <div class="sens-row"><span class="k">Untrended YoC (Perm Loan)</span><span class="v">{pct(BASE["yoc_perm"]*100)}</span></div>
+      </div>
+    </div>
+    <div class="sens-col alt">
+      <div class="sens-label">Effective Tax Basis</div>
+      <div class="sens-price">{money(ALT_PRICE, 2)}</div>
+      <div class="sens-sub">Property tax basis per seller stipulation</div>
+      <div class="sens-rows">
+        <div class="sens-row"><span class="k">$ / Bed (48 existing)</span><span class="v">{usd(ALT["ppb_existing"])}</span></div>
+        <div class="sens-row"><span class="k">$ / Bed (50 with ADU)</span><span class="v">{usd(ALT["ppb_w_adu"])}</span></div>
+        <div class="sens-row"><span class="k">$ / Unit (16 existing)</span><span class="v">{usd(ALT["ppu_existing"])}</span></div>
+        <div class="sens-row"><span class="k">$ / SF Rentable</span><span class="v">${ALT["psf_rent"]:.0f}</span></div>
+        <div class="sens-row"><span class="k">$ / SF Gross</span><span class="v">${ALT["psf_gross"]:.0f}</span></div>
+        <div class="sens-row"><span class="k">Discount to Replacement Cost</span><span class="v">{pct(ALT["disc_repl"]*100, 0)}</span></div>
+        <div class="sens-row"><span class="k">Discount to UCLA $250K / Bed</span><span class="v">{pct(UCLA_DISCOUNT_ALT*100, 0)}</span></div>
+        <div class="sens-row"><span class="k">Cap Rate on Price</span><span class="v">{pct(ALT["cap_on_price"]*100)}</span></div>
+        <div class="sens-row"><span class="k">Untrended YoC (Acq Loan)</span><span class="v">{pct(ALT["yoc_acq"]*100)}</span></div>
+        <div class="sens-row"><span class="k">Untrended YoC (Perm Loan)</span><span class="v">{pct(ALT["yoc_perm"]*100)}</span></div>
+      </div>
+    </div>
   </div>
 
   <h3 class="sub-heading">Sources &amp; Uses</h3>
