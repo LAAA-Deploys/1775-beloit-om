@@ -46,6 +46,7 @@ GLEN_IMG    = img_b64("Glen_Scher.png", 300)
 FILIP_IMG   = img_b64("Filip_Niculete.png", 300)
 # Hero + gallery
 HERO_IMG       = img_b64("hero.jpg", 1600) if os.path.exists(os.path.join(IMAGES_DIR, "hero.jpg")) else ""
+ROOFTOP_MAIN_IMG = img_b64("rooftop_main.jpg", 1400) if os.path.exists(os.path.join(IMAGES_DIR, "rooftop_main.jpg")) else ""
 EXTERIOR_IMG   = img_b64("exterior1.jpg", 1400) if os.path.exists(os.path.join(IMAGES_DIR, "exterior1.jpg")) else ""
 RENDERING_IMG  = img_b64("rendering.jpg", 1400) if os.path.exists(os.path.join(IMAGES_DIR, "rendering.jpg")) else ""
 ROOFTOP_IMG    = img_b64("rooftop_view.jpg", 1400) if os.path.exists(os.path.join(IMAGES_DIR, "rooftop_view.jpg")) else ""
@@ -659,7 +660,7 @@ ASSET += f"""
       <div class="pg-caption">Architectural Concept &middot; ShubinDonaldson</div>
     </div>
     <div class="pg-item">
-      <img src="{HERO_IMG}" alt="Rooftop terrace">
+      <img src="{ROOFTOP_MAIN_IMG}" alt="Rooftop terrace">
       <div class="pg-caption">Rooftop Deck &middot; Century City Views</div>
     </div>
     <div class="pg-item">
